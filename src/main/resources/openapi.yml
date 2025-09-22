@@ -1,0 +1,135 @@
+openapi: 3.0.3
+info:
+  title: BootCoin Quote API
+  version: "1.0.0"
+  description: |
+    Servicio para administrar la cotización BootCoin.
+    Expone endpoints para consultar y actualizar la tasa, y al actualizar publica el evento `quote.updated`.
+servers:
+  - url: http://localhost:8095
+    description: Local
+
+paths:
+  /api/v1/bootcoin/quote/rate:
+    get:
+      operationId: getCurrentRate
+      tags:
+        - Quote
+      summary: Obtener la cotización actual
+      description: Retorna la última cotización almacenada en Redis.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cotización actual
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRates"
+        "404":
+          description: No hay cotización cargada aún
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: No autorizado
+    post:
+      operationId: setQuoteRate
+      tags:
+        - Quote
+      summary: Actualizar la cotización y publicar evento
+      description: >
+        Actualiza la cotización y publica el evento `quote.updated` en Kafka.
+        Devuelve 202 Accepted para indicar que se aceptó el comando.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteRates"
+            examples:
+              ejemplo:
+                value:
+                  buyRate: 3.70
+                  sellRate: 3.68
+      responses:
+        "202":
+          description: Cotización aceptada y evento publicado
+          headers:
+            X-Correlation-Id:
+              description: Identificador de correlación propagado en el evento.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteAccepted"
+        "400":
+          description: Petición inválida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: No autorizado
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    QuoteRates:
+      type: object
+      required:
+        - buyRate
+        - sellRate
+      properties:
+        buyRate:
+          type: number
+          format: decimal
+          minimum: 0.0001
+          description: Tasa de compra
+        sellRate:
+          type: number
+          format: decimal
+          minimum: 0.0001
+          description: Tasa de venta
+    QuoteAccepted:
+      type: object
+      description: Confirmación de aceptación de nueva cotización
+      properties:
+        buyRate:
+          type: number
+          format: decimal
+        sellRate:
+          type: number
+          format: decimal
+        occurredAt:
+          type: string
+          format: date-time
+          description: Momento en que se generó el evento `quote.updated`
+        correlationId:
+          type: string
+          description: Correlación del mensaje publicado
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+security:
+  - bearerAuth: []
