@@ -1,13 +1,13 @@
 spring:
   application:
     name: bootcoin-quote
-  config:
-    import: optional:configserver:http://localhost:8888
+#  config:
+#    import: optional:configserver:http://localhost:8888
   cloud:
     config:
       label: main
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8091/realms/nttdatabank
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://localhost:8091/realms/nttdatabank

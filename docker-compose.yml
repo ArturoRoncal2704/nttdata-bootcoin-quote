@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  bootcoin-quote:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ntt/bootcoin-quote:0.0.1
+    container_name: bootcoin-quote
+    ports:
+      - "8095:8095"
+    environment:
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8095
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      APP_AUTH_ALLOWED_ISSUERS: "http://keycloak:8091/realms/nttdatabank,http://localhost:8091/realms/nttdatabank"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8091/realms/nttdatabank
+
+      SPRING_APPLICATION_JSON: >
+        {"eureka":{"client":{"serviceUrl":{"defaultZone":"http://eureka-server:8761/eureka"}}}}
+    networks:
+      - infra-net
+
+networks:
+  infra-net:
+    external: true
